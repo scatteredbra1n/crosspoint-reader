@@ -55,7 +55,7 @@ const char* kRealisticPretty = R"({
       "url": "https://api.github.com/repos/crosspoint-reader/crosspoint-reader/releases/assets/100002",
       "id": 100002,
       "node_id": "RA_kwDOAbCdEf4AAGHS",
-      "name": "firmware.bin",
+      "name": "firmware-scatteredbrain-v1.0.0.bin",
       "label": "ESP32-C3 Firmware",
       "uploader": {
         "login": "releasebot",
@@ -110,7 +110,7 @@ const char* kRealisticPretty = R"({
 })";
 
 const char* kRealisticMinified =
-    R"({"url":"https://api.github.com/repos/crosspoint-reader/crosspoint-reader/releases/12345","assets_url":"https://api.github.com/repos/crosspoint-reader/crosspoint-reader/releases/12345/assets","id":12345,"author":{"login":"releasebot","id":99887766,"node_id":"MDQ6VXNlcjk5ODg3NzY2","type":"User","site_admin":false},"tag_name":"v2.4.1","target_commitish":"main","name":"CrossPoint Reader v2.4.1","draft":false,"prerelease":false,"assets":[{"url":"https://api.github.com/repos/crosspoint-reader/crosspoint-reader/releases/assets/100001","id":100001,"name":"crosspoint-reader-v2.4.1-source.zip","uploader":{"login":"releasebot","id":99887766},"content_type":"application/zip","state":"uploaded","size":2048576,"download_count":42,"browser_download_url":"https://github.com/crosspoint-reader/crosspoint-reader/releases/download/v2.4.1/crosspoint-reader-v2.4.1-source.zip"},{"url":"https://api.github.com/repos/crosspoint-reader/crosspoint-reader/releases/assets/100002","id":100002,"name":"firmware.bin","uploader":{"login":"releasebot","id":99887766},"content_type":"application/octet-stream","state":"uploaded","size":1572864,"download_count":187,"browser_download_url":"https://github.com/crosspoint-reader/crosspoint-reader/releases/download/v2.4.1/firmware.bin"},{"url":"https://api.github.com/repos/crosspoint-reader/crosspoint-reader/releases/assets/100003","id":100003,"name":"checksums.sha256","uploader":{"login":"releasebot","id":99887766},"content_type":"text/plain","state":"uploaded","size":192,"download_count":15,"browser_download_url":"https://github.com/crosspoint-reader/crosspoint-reader/releases/download/v2.4.1/checksums.sha256"}],"body":"## What's Changed\n\n* Fixed orientation crash","reactions":{"url":"https://api.github.com/repos/crosspoint-reader/crosspoint-reader/releases/12345/reactions","total_count":5,"+1":3}})";
+    R"({"url":"https://api.github.com/repos/crosspoint-reader/crosspoint-reader/releases/12345","assets_url":"https://api.github.com/repos/crosspoint-reader/crosspoint-reader/releases/12345/assets","id":12345,"author":{"login":"releasebot","id":99887766,"node_id":"MDQ6VXNlcjk5ODg3NzY2","type":"User","site_admin":false},"tag_name":"v2.4.1","target_commitish":"main","name":"CrossPoint Reader v2.4.1","draft":false,"prerelease":false,"assets":[{"url":"https://api.github.com/repos/crosspoint-reader/crosspoint-reader/releases/assets/100001","id":100001,"name":"crosspoint-reader-v2.4.1-source.zip","uploader":{"login":"releasebot","id":99887766},"content_type":"application/zip","state":"uploaded","size":2048576,"download_count":42,"browser_download_url":"https://github.com/crosspoint-reader/crosspoint-reader/releases/download/v2.4.1/crosspoint-reader-v2.4.1-source.zip"},{"url":"https://api.github.com/repos/crosspoint-reader/crosspoint-reader/releases/assets/100002","id":100002,"name":"firmware-scatteredbrain-v1.0.0.bin","uploader":{"login":"releasebot","id":99887766},"content_type":"application/octet-stream","state":"uploaded","size":1572864,"download_count":187,"browser_download_url":"https://github.com/crosspoint-reader/crosspoint-reader/releases/download/v2.4.1/firmware.bin"},{"url":"https://api.github.com/repos/crosspoint-reader/crosspoint-reader/releases/assets/100003","id":100003,"name":"checksums.sha256","uploader":{"login":"releasebot","id":99887766},"content_type":"text/plain","state":"uploaded","size":192,"download_count":15,"browser_download_url":"https://github.com/crosspoint-reader/crosspoint-reader/releases/download/v2.4.1/checksums.sha256"}],"body":"## What's Changed\n\n* Fixed orientation crash","reactions":{"url":"https://api.github.com/repos/crosspoint-reader/crosspoint-reader/releases/12345/reactions","total_count":5,"+1":3}})";
 
 void feedChunked(ReleaseJsonParser& p, const char* json, size_t chunkSize) {
   size_t len = strlen(json);
@@ -169,7 +169,7 @@ TEST(ReleaseJsonParser, FirmwareNotFirstAsset) {
       "assets": [
         {"name": "source.tar.gz", "browser_download_url": "https://example.com/src.tar.gz", "size": 500000},
         {"name": "docs.pdf", "browser_download_url": "https://example.com/docs.pdf", "size": 120000},
-        {"name": "firmware.bin", "browser_download_url": "https://example.com/firmware.bin", "size": 987654},
+        {"name": "firmware-scatteredbrain-v1.0.0.bin", "browser_download_url": "https://example.com/firmware.bin", "size": 987654},
         {"name": "checksums.txt", "browser_download_url": "https://example.com/checksums.txt", "size": 256}
       ]
     })";
@@ -184,12 +184,51 @@ TEST(ReleaseJsonParser, FirmwareNotFirstAsset) {
   EXPECT_EQ(p.getFirmwareSize(), 987654u);
 }
 
+TEST(ReleaseJsonParser, ForkBrandedFirmwareAsset) {
+  const char* json = R"({
+      "tag_name": "1.4.2-scatteredbra1n",
+      "assets": [
+        {
+          "name": "firmware-scatteredbrain-v1.4.2.bin",
+          "browser_download_url": "https://github.com/scatteredbra1n/crosspoint-reader/releases/download/1.4.2-scatteredbra1n/firmware-scatteredbrain-v1.4.2.bin",
+          "size": 5361632
+        }
+      ]
+    })";
+
+  ReleaseJsonParser p;
+  p.feed(json, strlen(json));
+
+  EXPECT_TRUE(p.foundTag());
+  EXPECT_TRUE(p.foundFirmware());
+  EXPECT_STREQ(p.getTagName(), "1.4.2-scatteredbra1n");
+  EXPECT_STREQ(p.getFirmwareUrl(),
+               "https://github.com/scatteredbra1n/crosspoint-reader/releases/download/1.4.2-scatteredbra1n/"
+               "firmware-scatteredbrain-v1.4.2.bin");
+  EXPECT_EQ(p.getFirmwareSize(), 5361632u);
+}
+
+TEST(ReleaseJsonParser, IgnoresPlainFirmwareBin) {
+  const char* json = R"({
+      "tag_name": "1.4.2",
+      "assets": [
+        {"name": "firmware.bin", "browser_download_url": "https://example.com/firmware.bin", "size": 1000}
+      ]
+    })";
+
+  ReleaseJsonParser p;
+  p.feed(json, strlen(json));
+
+  EXPECT_TRUE(p.foundTag());
+  EXPECT_FALSE(p.foundFirmware());
+}
+
 TEST(ReleaseJsonParser, FieldOrderUrlBeforeName) {
   const char* json = R"({
       "tag_name": "v3.0",
       "assets": [{
         "browser_download_url": "https://example.com/fw.bin",
-        "name": "firmware.bin",
+        "name": "firmware-scatteredbrain-v1.0.0.bin",
         "size": 2222
       }]
     })";
@@ -208,7 +247,7 @@ TEST(ReleaseJsonParser, FieldOrderSizeBeforeUrl) {
       "assets": [{
         "size": 3333,
         "browser_download_url": "https://example.com/fw2.bin",
-        "name": "firmware.bin"
+        "name": "firmware-scatteredbrain-v1.0.0.bin"
       }]
     })";
 
@@ -224,7 +263,7 @@ TEST(ReleaseJsonParser, FieldOrderNameFirst) {
   const char* json = R"({
       "tag_name": "v3.2",
       "assets": [{
-        "name": "firmware.bin",
+        "name": "firmware-scatteredbrain-v1.0.0.bin",
         "size": 4444,
         "browser_download_url": "https://example.com/fw3.bin"
       }]
@@ -243,7 +282,7 @@ TEST(ReleaseJsonParser, AssetsBeforeTagName) {
   const char* json = R"({
       "name": "Release",
       "assets": [{
-        "name": "firmware.bin",
+        "name": "firmware-scatteredbrain-v1.0.0.bin",
         "browser_download_url": "https://example.com/fw.bin",
         "size": 5555
       }],
@@ -302,7 +341,7 @@ TEST(ReleaseJsonParser, MissingTagName) {
       "name": "Some Release",
       "draft": false,
       "assets": [{
-        "name": "firmware.bin",
+        "name": "firmware-scatteredbrain-v1.0.0.bin",
         "browser_download_url": "https://example.com/fw.bin",
         "size": 1000
       }]
@@ -387,7 +426,7 @@ TEST(ReleaseJsonParser, TruncatedInsideAssetsArray) {
 
 TEST(ReleaseJsonParser, TruncatedAfterFirmwareName) {
   // Found the name but connection dropped before URL/size
-  const char* json = R"({"tag_name":"v1.0","assets":[{"name":"firmware.bin","browser_dow)";
+  const char* json = R"({"tag_name":"v1.0","assets":[{"name":"firmware-scatteredbrain-v1.0.0.bin","browser_dow)";
 
   ReleaseJsonParser p;
   p.feed(json, strlen(json));
@@ -414,7 +453,7 @@ TEST(ReleaseJsonParser, NestedObjectsInAsset) {
   const char* json = R"({
       "tag_name": "v5.0",
       "assets": [{
-        "name": "firmware.bin",
+        "name": "firmware-scatteredbrain-v1.0.0.bin",
         "uploader": {
           "login": "bot",
           "id": 42,
@@ -439,7 +478,7 @@ TEST(ReleaseJsonParser, NestedObjectsAtTopLevel) {
       "author": {"login": "dev", "id": 1, "nested": {"deep": true}},
       "tag_name": "v6.0",
       "reactions": {"url": "https://reactions", "total_count": 0, "+1": 0},
-      "assets": [{"name": "firmware.bin", "browser_download_url": "https://fw6", "size": 1111}],
+      "assets": [{"name": "firmware-scatteredbrain-v1.0.0.bin", "browser_download_url": "https://fw6", "size": 1111}],
       "mentions_count": 3
     })";
 
@@ -457,7 +496,7 @@ TEST(ReleaseJsonParser, ArraysAtTopLevel) {
   const char* json = R"({
       "tag_name": "v7.0",
       "labels": ["release", "stable"],
-      "assets": [{"name": "firmware.bin", "browser_download_url": "https://fw7", "size": 7070}]
+      "assets": [{"name": "firmware-scatteredbrain-v1.0.0.bin", "browser_download_url": "https://fw7", "size": 7070}]
     })";
 
   ReleaseJsonParser p;
@@ -473,7 +512,7 @@ TEST(ReleaseJsonParser, ResetAndReuse) {
   ReleaseJsonParser p;
 
   const char* json1 =
-      R"({"tag_name":"v1.0","assets":[{"name":"firmware.bin","browser_download_url":"https://a","size":1}]})";
+      R"({"tag_name":"v1.0","assets":[{"name":"firmware-scatteredbrain-v1.0.0.bin","browser_download_url":"https://a","size":1}]})";
   p.feed(json1, strlen(json1));
   EXPECT_TRUE(p.foundTag());
   EXPECT_STREQ(p.getTagName(), "v1.0");
@@ -483,7 +522,7 @@ TEST(ReleaseJsonParser, ResetAndReuse) {
   p.reset();
 
   const char* json2 =
-      R"({"tag_name":"v2.0","assets":[{"name":"firmware.bin","browser_download_url":"https://b","size":2}]})";
+      R"({"tag_name":"v2.0","assets":[{"name":"firmware-scatteredbrain-v1.0.0.bin","browser_download_url":"https://b","size":2}]})";
   p.feed(json2, strlen(json2));
   EXPECT_TRUE(p.foundTag());
   EXPECT_STREQ(p.getTagName(), "v2.0");
@@ -495,7 +534,7 @@ TEST(ReleaseJsonParser, ResetClearsState) {
   ReleaseJsonParser p;
 
   const char* json =
-      R"({"tag_name":"v1.0","assets":[{"name":"firmware.bin","browser_download_url":"https://a","size":100}]})";
+      R"({"tag_name":"v1.0","assets":[{"name":"firmware-scatteredbrain-v1.0.0.bin","browser_download_url":"https://a","size":100}]})";
   p.feed(json, strlen(json));
   EXPECT_TRUE(p.foundTag());
   EXPECT_TRUE(p.foundFirmware());
@@ -510,7 +549,7 @@ TEST(ReleaseJsonParser, ResetClearsState) {
 }
 
 TEST(ReleaseJsonParser, PartialAssetNameMatch) {
-  // "firmware.bin.bak" should NOT match "firmware.bin"
+  // Non-branded names should NOT match
   const char* json = R"({
       "tag_name": "v1.0",
       "assets": [
@@ -527,12 +566,12 @@ TEST(ReleaseJsonParser, PartialAssetNameMatch) {
 }
 
 TEST(ReleaseJsonParser, FirmwareBinExactMatch) {
-  // Only exact "firmware.bin" matches, not similar names
+  // Only firmware-scatteredbrain-*.bin matches, not similar names
   const char* json = R"({
       "tag_name": "v1.0",
       "assets": [
         {"name": "FIRMWARE.BIN", "browser_download_url": "https://upper", "size": 100},
-        {"name": "firmware.bin", "browser_download_url": "https://exact", "size": 200},
+        {"name": "firmware-scatteredbrain-v1.0.0.bin", "browser_download_url": "https://exact", "size": 200},
         {"name": "firmware.bin2", "browser_download_url": "https://suffix", "size": 300}
       ]
     })";
@@ -548,7 +587,7 @@ TEST(ReleaseJsonParser, FirmwareBinExactMatch) {
 TEST(ReleaseJsonParser, LargeSize) {
   // 16MB firmware (maximum flash size)
   const char* json =
-      R"({"tag_name":"v1.0","assets":[{"name":"firmware.bin","browser_download_url":"https://fw","size":16777216}]})";
+      R"({"tag_name":"v1.0","assets":[{"name":"firmware-scatteredbrain-v1.0.0.bin","browser_download_url":"https://fw","size":16777216}]})";
 
   ReleaseJsonParser p;
   p.feed(json, strlen(json));
@@ -558,7 +597,7 @@ TEST(ReleaseJsonParser, LargeSize) {
 
 TEST(ReleaseJsonParser, SizeZero) {
   const char* json =
-      R"({"tag_name":"v1.0","assets":[{"name":"firmware.bin","browser_download_url":"https://fw","size":0}]})";
+      R"({"tag_name":"v1.0","assets":[{"name":"firmware-scatteredbrain-v1.0.0.bin","browser_download_url":"https://fw","size":0}]})";
 
   ReleaseJsonParser p;
   p.feed(json, strlen(json));
@@ -568,7 +607,7 @@ TEST(ReleaseJsonParser, SizeZero) {
 }
 
 TEST(ReleaseJsonParser, MinimalValidJson) {
-  const char* json = R"({"tag_name":"v0","assets":[{"name":"firmware.bin","browser_download_url":"u","size":1}]})";
+  const char* json = R"({"tag_name":"v0","assets":[{"name":"firmware-scatteredbrain-v1.0.0.bin","browser_download_url":"u","size":1}]})";
 
   ReleaseJsonParser p;
   p.feed(json, strlen(json));
@@ -583,7 +622,7 @@ TEST(ReleaseJsonParser, MinimalValidJson) {
 TEST(ReleaseJsonParser, ChunkedRealisticEveryBoundary) {
   // Two-chunk split at every byte boundary on a compact JSON
   const char* json =
-      R"({"tag_name":"v2.0","assets":[{"name":"firmware.bin","browser_download_url":"https://example.com/fw","size":9999}]})";
+      R"({"tag_name":"v2.0","assets":[{"name":"firmware-scatteredbrain-v1.0.0.bin","browser_download_url":"https://example.com/fw","size":9999}]})";
   size_t len = strlen(json);
 
   for (size_t split = 0; split <= len; ++split) {

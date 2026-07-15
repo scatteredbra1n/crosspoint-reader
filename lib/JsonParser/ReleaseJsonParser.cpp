@@ -11,6 +11,20 @@ void safeCopy(char* dst, size_t dstSize, const char* src, size_t srcLen) {
   dst[n] = '\0';
 }
 
+// Fork releases publish firmware-scatteredbrain-vX.Y.Z.bin (not upstream firmware.bin).
+bool isFirmwareAssetName(const char* name) {
+  static constexpr char kPrefix[] = "firmware-scatteredbrain-";
+  const size_t nameLen = strlen(name);
+  const size_t prefixLen = sizeof(kPrefix) - 1;
+  if (nameLen <= prefixLen + 4) {
+    return false;
+  }
+  if (strncmp(name, kPrefix, prefixLen) != 0) {
+    return false;
+  }
+  return strcmp(name + nameLen - 4, ".bin") == 0;
+}
+
 }  // namespace
 
 ReleaseJsonParser::ReleaseJsonParser()
@@ -44,7 +58,7 @@ const char* ReleaseJsonParser::getFirmwareUrl() const { return firmwareUrl; }
 size_t ReleaseJsonParser::getFirmwareSize() const { return firmwareSize; }
 
 void ReleaseJsonParser::commitAsset() {
-  if (strcmp(currentAssetName, "firmware.bin") == 0) {
+  if (!firmwareFound && isFirmwareAssetName(currentAssetName)) {
     memcpy(firmwareUrl, currentAssetUrl, sizeof(firmwareUrl));
     firmwareSize = currentAssetSize;
     firmwareFound = true;
