@@ -62,7 +62,8 @@ class ReleaseJsonParser {
   bool tagFound;
   bool firmwareFound;
 
-  char currentAssetName[32];
+  // Sized for fork assets like firmware-scatteredbrain-v1.4.2.bin (>32 chars).
+  char currentAssetName[64];
   char currentAssetUrl[512];
   size_t currentAssetSize;
 };
