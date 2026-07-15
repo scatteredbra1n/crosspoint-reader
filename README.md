@@ -4,7 +4,7 @@
 
 **This is a fork** focused on device rotation features — Settings → Display → Device Orientation applies portrait, portrait 180°, and landscape orientations across the whole OS (not only the reader).
 
-**Firmware builds:** download flashable `.bin` files from this fork’s [Releases](https://github.com/scatteredbra1n/crosspoint-reader/releases) (Custom .bin / esptool — not official CrossPoint OTA).
+**Firmware builds:** download flashable `.bin` files from this fork’s [Releases](https://github.com/scatteredbra1n/crosspoint-reader/releases) (Custom .bin / esptool — not official CrossPoint OTA). To publish a new build: enable Actions on this repo (Settings → Actions → General → allow Actions, set workflow permissions to **Read and write**), then `git tag vX.Y.Z-os-rotation && git push origin vX.Y.Z-os-rotation`.
 
 CrossPoint is open-source e-reader firmware - community-built, fully hackable, free forever. It's maintained by a growing community of developers and readers who believe your device should do what you want - not what a manufacturer decided for you.
 
