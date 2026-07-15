@@ -4,6 +4,8 @@
 
 **This is a fork** focused on device rotation features — Settings → Display → Device Orientation applies portrait, portrait 180°, and landscape orientations across the whole OS (not only the reader).
 
+**Firmware builds:** download flashable `.bin` files from this fork’s [Releases](https://github.com/scatteredbra1n/crosspoint-reader/releases) (Custom .bin / esptool — not official CrossPoint OTA).
+
 CrossPoint is open-source e-reader firmware - community-built, fully hackable, free forever. It's maintained by a growing community of developers and readers who believe your device should do what you want - not what a manufacturer decided for you.
 
 **Now running on:** ESP32C3-based Xteink [X4](https://www.xteink.com/products/xteink-x4) and [X3](https://www.xteink.com/products/xteink-x3).

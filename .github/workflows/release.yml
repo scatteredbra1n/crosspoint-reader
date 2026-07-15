@@ -2,7 +2,10 @@ name: Compile Release
 on:
   push:
     tags:
-      - '*'
+      - 'v*'
+
+permissions:
+  contents: write
 
 jobs:
   build-release:
@@ -35,6 +38,12 @@ jobs:
       - name: Build CrossPoint
         run: pio run -e gh_release
 
+      - name: Name release assets
+        run: |
+          mkdir -p dist
+          cp .pio/build/gh_release/firmware.bin "dist/crosspoint-os-rotation-${GITHUB_REF_NAME}.bin"
+          cp .pio/build/gh_release/firmware.bin dist/firmware.bin
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -45,3 +54,12 @@ jobs:
             .pio/build/gh_release/firmware.elf
             .pio/build/gh_release/firmware.map
             .pio/build/gh_release/partitions.bin
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/firmware.bin
+            dist/crosspoint-os-rotation-${{ github.ref_name }}.bin
+          generate_release_notes: true
+          fail_on_unmatched_files: true
