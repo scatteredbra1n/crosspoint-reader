@@ -3,6 +3,7 @@ PlatformIO pre-build script: inject git branch and short SHA into
 CROSSPOINT_VERSION for the default (dev) environment.
 
 Results in a version string like:  1.1.0-dev-feat-kosync-xpath-05c6cf8
+With [crosspoint] fork_suffix set:  1.1.0-dev-branch-sha-<suffix>
 Release environments are unaffected; they set CROSSPOINT_VERSION in the ini.
 """
 
@@ -63,17 +64,29 @@ def get_git_short_sha(project_dir):
     )
 
 
-def get_base_version(project_dir):
+def get_crosspoint_ini(project_dir):
     ini_path = os.path.join(project_dir, 'platformio.ini')
-    if not os.path.isfile(ini_path):
-        warn(f'platformio.ini not found at {ini_path}; base version will be "0.0.0"')
-        return '0.0.0'
     config = configparser.ConfigParser()
+    if not os.path.isfile(ini_path):
+        warn(f'platformio.ini not found at {ini_path}')
+        return config
     config.read(ini_path)
+    return config
+
+
+def get_base_version(config):
     if not config.has_option('crosspoint', 'version'):
         warn('No [crosspoint] version in platformio.ini; base version will be "0.0.0"')
         return '0.0.0'
     return config.get('crosspoint', 'version')
+
+
+def get_fork_suffix(config):
+    if not config.has_option('crosspoint', 'fork_suffix'):
+        return ''
+    suffix = config.get('crosspoint', 'fork_suffix').strip()
+    # Strip characters that would break a C string literal
+    return ''.join(c for c in suffix if c not in '"\\')
 
 
 def inject_version(env):
@@ -83,10 +96,14 @@ def inject_version(env):
         return
 
     project_dir = env['PROJECT_DIR']
-    base_version = get_base_version(project_dir)
+    config = get_crosspoint_ini(project_dir)
+    base_version = get_base_version(config)
     branch = get_git_branch(project_dir)
     short_sha = get_git_short_sha(project_dir)
     version_string = f'{base_version}-dev-{branch}-{short_sha}'
+    fork_suffix = get_fork_suffix(config)
+    if fork_suffix:
+        version_string = f'{version_string}-{fork_suffix}'
 
     env.Append(CPPDEFINES=[('CROSSPOINT_VERSION', f'\\"{version_string}\\"')])
     print(f'CrossPoint build version: {version_string}')
