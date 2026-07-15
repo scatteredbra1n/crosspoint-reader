@@ -383,8 +383,11 @@ void RoundedRaffTheme::drawList(const GfxRenderer& renderer, Rect rect, int item
 
 void RoundedRaffTheme::drawButtonHints(GfxRenderer& renderer, const char* btn1, const char* btn2, const char* btn3,
                                        const char* btn4) const {
-  const GfxRenderer::Orientation origOrientation = renderer.getOrientation();
-  renderer.setOrientation(GfxRenderer::Orientation::Portrait);
+  // Landscape / Portrait 180° use orientation-aware placement in BaseTheme (vertical sides / top strip).
+  if (renderer.getOrientation() != GfxRenderer::Orientation::Portrait) {
+    BaseTheme::drawButtonHints(renderer, btn1, btn2, btn3, btn4);
+    return;
+  }
 
   const int pageWidth = renderer.getScreenWidth();
   const int pageHeight = renderer.getScreenHeight();
@@ -428,6 +431,4 @@ void RoundedRaffTheme::drawButtonHints(GfxRenderer& renderer, const char* btn1, 
 
   renderer.drawText(kGuideFontId, upX, textY, upText.c_str(), true, EpdFontFamily::REGULAR);
   renderer.drawText(kGuideFontId, downX, textY, downText.c_str(), true, EpdFontFamily::REGULAR);
-
-  renderer.setOrientation(origOrientation);
 }

@@ -5,12 +5,20 @@
 #include "CrossPointSettings.h"
 
 bool MappedInputManager::isNavDirectionSwapped() const {
-  // Key the swap on the orientation the screen is *actually* rendered at, not the persisted reader
-  // setting. The reader (and its modal menus) render rotated, so navigation/labels flip there; the
-  // home and settings UI render in portrait, so they never flip even when a rotated reader is configured.
+  // Portrait 180° / landscape CCW flips visual left/right vs fixed front flexure. When enabled,
+  // NavPrevious/NavNext and Left/Right hint labels follow that visual axis.
   const auto orientation = renderer.getOrientation();
   return SETTINGS.frontButtonFollowOrientation &&
          (orientation == GfxRenderer::PortraitInverted || orientation == GfxRenderer::LandscapeCounterClockwise);
+}
+
+bool MappedInputManager::shouldReverseFrontHintOrder() const {
+  // Portrait 180° mirrors the bottom strip. Landscape CCW places the flexure on the right;
+  // top→bottom there matches reverse of Portrait L→R hardware order. Landscape CW (left strip)
+  // keeps hardware order top→bottom.
+  const auto orientation = renderer.getOrientation();
+  return orientation == GfxRenderer::PortraitInverted ||
+         orientation == GfxRenderer::LandscapeCounterClockwise;
 }
 
 bool MappedInputManager::mapButton(const Button button, bool (HalGPIO::*fn)(uint8_t) const) const {
@@ -111,8 +119,15 @@ MappedInputManager::Labels MappedInputManager::mapLabels(const char* back, const
     return "";
   };
 
-  return {labelForHardware(HalGPIO::BTN_BACK), labelForHardware(HalGPIO::BTN_CONFIRM),
-          labelForHardware(HalGPIO::BTN_LEFT), labelForHardware(HalGPIO::BTN_RIGHT)};
+  // Hardware flexure order (Portrait L→R): BACK, CONFIRM, LEFT, RIGHT.
+  Labels ordered = {labelForHardware(HalGPIO::BTN_BACK), labelForHardware(HalGPIO::BTN_CONFIRM),
+                    labelForHardware(HalGPIO::BTN_LEFT), labelForHardware(HalGPIO::BTN_RIGHT)};
+  // Portrait 180° / Landscape CCW mirror the flexure strip in logical space — reverse so painted
+  // order (bottom L→R or side top→bottom) matches what the user sees.
+  if (shouldReverseFrontHintOrder()) {
+    return {ordered.btn4, ordered.btn3, ordered.btn2, ordered.btn1};
+  }
+  return ordered;
 }
 
 int MappedInputManager::getPressedFrontButton() const {

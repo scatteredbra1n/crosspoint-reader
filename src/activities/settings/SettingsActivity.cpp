@@ -22,6 +22,7 @@
 #include "SettingsList.h"
 #include "StatusBarSettingsActivity.h"
 #include "activities/network/WifiSelectionActivity.h"
+#include "activities/reader/ReaderUtils.h"
 #include "activities/util/IntervalSelectionActivity.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
@@ -193,6 +194,7 @@ void SettingsActivity::toggleCurrentSetting() {
   const auto& setting = (*currentSettings)[selectedSetting];
   const bool sleepScreenChanged = setting.valuePtr == &CrossPointSettings::sleepScreen;
   const bool quickResumeTimeoutChanged = setting.valuePtr == &CrossPointSettings::quickResumeSleepScreen;
+  const bool orientationChanged = setting.valuePtr == &CrossPointSettings::orientation;
 
   if (setting.nameId == StrId::STR_TIME_TO_SLEEP) {
     openSleepTimeoutPicker();
@@ -208,9 +210,13 @@ void SettingsActivity::toggleCurrentSetting() {
     if (setting.enumValues.size() > 2) {
       const auto valuePtr = setting.valuePtr;
       optionPopup.show(setting.nameId, setting.enumValues.data(), static_cast<int>(setting.enumValues.size()),
-                       currentValue, [this, valuePtr, sleepScreenChanged, quickResumeTimeoutChanged](int idx) {
+                       currentValue, [this, valuePtr, sleepScreenChanged, quickResumeTimeoutChanged,
+                                      orientationChanged](int idx) {
                          SETTINGS.*valuePtr = idx;
                          syncQuickResumeTimeoutForSleepScreen(sleepScreenChanged, quickResumeTimeoutChanged);
+                         if (orientationChanged) {
+                           ReaderUtils::applyOrientation(renderer, SETTINGS.orientation);
+                         }
                          SETTINGS.saveToFile();
                          rebuildSettingsLists();
                        });
@@ -218,6 +224,9 @@ void SettingsActivity::toggleCurrentSetting() {
       return;
     }
     SETTINGS.*(setting.valuePtr) = (currentValue + 1) % static_cast<uint8_t>(setting.enumValues.size());
+    if (orientationChanged) {
+      ReaderUtils::applyOrientation(renderer, SETTINGS.orientation);
+    }
   } else if (setting.type == SettingType::ENUM && setting.valueGetter && setting.valueSetter) {
     if (setting.nameId == StrId::STR_FONT_FAMILY) {
       // Launch font selection submenu instead of cycling
@@ -353,29 +362,25 @@ void SettingsActivity::render(RenderLock&&) {
 
   renderer.clearScreen();
 
-  const auto pageWidth = renderer.getScreenWidth();
-  const auto pageHeight = renderer.getScreenHeight();
-
+  const Rect safe = UITheme::getInstance().getScreenSafeArea(renderer, true, false);
   const auto& metrics = UITheme::getInstance().getMetrics();
 
-  GUI.drawHeader(renderer, Rect{0, metrics.topPadding, pageWidth, metrics.headerHeight}, tr(STR_SETTINGS_TITLE),
-                 CROSSPOINT_VERSION);
+  GUI.drawHeader(renderer, Rect{safe.x, safe.y + metrics.topPadding, safe.width, metrics.headerHeight},
+                 tr(STR_SETTINGS_TITLE), CROSSPOINT_VERSION);
 
   std::vector<TabInfo> tabs;
   tabs.reserve(categoryCount);
   for (int i = 0; i < categoryCount; i++) {
     tabs.push_back({I18N.get(categoryNames[i]), selectedCategoryIndex == i});
   }
-  GUI.drawTabBar(renderer, Rect{0, metrics.topPadding + metrics.headerHeight, pageWidth, metrics.tabBarHeight}, tabs,
-                 selectedSettingIndex == 0);
+  const int tabY = safe.y + metrics.topPadding + metrics.headerHeight;
+  GUI.drawTabBar(renderer, Rect{safe.x, tabY, safe.width, metrics.tabBarHeight}, tabs, selectedSettingIndex == 0);
 
   const auto& settings = *currentSettings;
+  const int listY = tabY + metrics.tabBarHeight + metrics.verticalSpacing;
+  const int listH = (safe.y + safe.height) - listY - metrics.verticalSpacing;
   GUI.drawList(
-      renderer,
-      Rect{0, metrics.topPadding + metrics.headerHeight + metrics.tabBarHeight + metrics.verticalSpacing, pageWidth,
-           pageHeight - (metrics.topPadding + metrics.headerHeight + metrics.tabBarHeight + metrics.buttonHintsHeight +
-                         metrics.verticalSpacing * 2)},
-      settingsCount, selectedSettingIndex - 1,
+      renderer, Rect{safe.x, listY, safe.width, std::max(0, listH)}, settingsCount, selectedSettingIndex - 1,
       [&settings](int index) { return std::string(I18N.get(settings[index].nameId)); }, nullptr, nullptr,
       [&settings](int i) {
         const auto& setting = settings[i];

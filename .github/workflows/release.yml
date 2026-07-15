@@ -2,7 +2,10 @@ name: Compile Release
 on:
   push:
     tags:
-      - '*'
+      - 'v*'
+
+permissions:
+  contents: write
 
 jobs:
   build-release:
@@ -35,6 +38,16 @@ jobs:
       - name: Build CrossPoint
         run: pio run -e gh_release
 
+      - name: Name release assets
+        id: assets
+        run: |
+          mkdir -p dist
+          VERSION=$(python3 -c "import configparser; c=configparser.ConfigParser(); c.read('platformio.ini'); print(c.get('crosspoint', 'version'))")
+          NAME="firmware-scatteredbrain-v${VERSION}.bin"
+          cp .pio/build/gh_release/firmware.bin "dist/${NAME}"
+          echo "Named release asset: ${NAME}"
+          echo "firmware_name=${NAME}" >> "$GITHUB_OUTPUT"
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -45,3 +58,11 @@ jobs:
             .pio/build/gh_release/firmware.elf
             .pio/build/gh_release/firmware.map
             .pio/build/gh_release/partitions.bin
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/${{ steps.assets.outputs.firmware_name }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true

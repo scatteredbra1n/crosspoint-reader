@@ -76,9 +76,9 @@ class CrossPointSettings {
 
   enum ORIENTATION {
     PORTRAIT = 0,       // 480x800 logical coordinates (current default)
-    LANDSCAPE_CW = 1,   // 800x480 logical coordinates, rotated 180° (swap top/bottom)
-    INVERTED = 2,       // 480x800 logical coordinates, inverted
-    LANDSCAPE_CCW = 3,  // 800x480 logical coordinates, native panel orientation
+    INVERTED = 1,       // 480x800 logical coordinates, portrait flipped 180°
+    LANDSCAPE_CW = 2,   // 800x480 logical coordinates, landscape
+    LANDSCAPE_CCW = 3,  // 800x480 logical coordinates, landscape flipped
     ORIENTATION_COUNT
   };
 
@@ -212,13 +212,13 @@ class CrossPointSettings {
   uint8_t textAntiAliasing = 1;
   // Short power button click behaviour
   uint8_t shortPwrBtn = IGNORE;
-  // EPUB reading orientation settings
+  // Device-wide display orientation (shell + reader)
   // 0 = portrait (default), 1 = landscape clockwise, 2 = inverted, 3 = landscape counter-clockwise
   uint8_t orientation = PORTRAIT;
   // Button layouts (front layout retained for migration only)
   uint8_t frontButtonLayout = BACK_CONFIRM_LEFT_RIGHT;
   uint8_t sideButtonLayout = PREV_NEXT;
-  uint8_t frontButtonFollowOrientation = 0;
+  uint8_t frontButtonFollowOrientation = 1;
   // Front button remap (logical -> hardware)
   // Used by MappedInputManager to translate logical buttons into physical front buttons.
   uint8_t frontButtonBack = FRONT_HW_BACK;
