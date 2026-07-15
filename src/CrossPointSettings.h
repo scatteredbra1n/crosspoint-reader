@@ -76,9 +76,9 @@ class CrossPointSettings {
 
   enum ORIENTATION {
     PORTRAIT = 0,       // 480x800 logical coordinates (current default)
-    LANDSCAPE_CW = 1,   // 800x480 logical coordinates, rotated 180° (swap top/bottom)
-    INVERTED = 2,       // 480x800 logical coordinates, inverted
-    LANDSCAPE_CCW = 3,  // 800x480 logical coordinates, native panel orientation
+    INVERTED = 1,       // 480x800 logical coordinates, portrait flipped 180°
+    LANDSCAPE_CW = 2,   // 800x480 logical coordinates, landscape
+    LANDSCAPE_CCW = 3,  // 800x480 logical coordinates, landscape flipped
     ORIENTATION_COUNT
   };
 

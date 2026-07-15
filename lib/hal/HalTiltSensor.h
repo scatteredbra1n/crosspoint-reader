@@ -7,7 +7,7 @@
 
 // TODO: Move enums into new header and share with CrossPointSettings.h
 namespace CrossPointOrientation {
-enum Value : uint8_t { PORTRAIT = 0, LANDSCAPE_CW = 1, INVERTED = 2, LANDSCAPE_CCW = 3 };
+enum Value : uint8_t { PORTRAIT = 0, INVERTED = 1, LANDSCAPE_CW = 2, LANDSCAPE_CCW = 3 };
 }
 
 namespace CrossPointTiltPageTurn {
